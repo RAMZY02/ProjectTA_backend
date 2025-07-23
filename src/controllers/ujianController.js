@@ -20,9 +20,34 @@ exports.getAllUjian = async (req, res) => {
 
 exports.createUjian = async (req, res) => {
   try {
-    const { nama, mapel, tipe_soal, tipe_ujian, durasi, tanggal, mulai, selesai, jumlah_soal, deskripsi, id_guru } = req.body;
+    const {
+      nama,
+      mapel,
+      tipe_soal,
+      tipe_ujian,
+      durasi,
+      tanggal,
+      mulai,
+      selesai,
+      deskripsi,
+      id_guru
+    } = req.body;
 
-    const newUjian = await Ujian.create({ nama, mapel, tipe_soal, tipe_ujian, durasi, tanggal, mulai, selesai, jumlah_soal, deskripsi, id_guru });
+    const newUjian = await Ujian.create({
+      nama,
+      mapel,
+      tipe_soal,
+      tipe_ujian,
+      durasi,
+      tanggal,
+      mulai,
+      selesai,
+      jumlah_soal : 0,
+      deskripsi,
+      id_guru,
+      key_status: 'active'
+    });
+
     res.status(201).json({ success: true, data: newUjian });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -31,9 +56,9 @@ exports.createUjian = async (req, res) => {
 
 exports.updateUjian = async (req, res) => {
   try {
-    const { nama, mapel, tipe_soal, tipe_ujian, durasi, tanggal, mulai, selesai, jumlah_soal, deskripsi, id_guru } = req.body;
+    const { nama, mapel, tipe_soal, tipe_ujian, durasi, tanggal, mulai, selesai, deskripsi, id_guru } = req.body;
     const [affectedRows] = await Ujian.update(
-      { nama, mapel, tipe_soal, tipe_ujian, durasi, tanggal, mulai, selesai, jumlah_soal, deskripsi, id_guru },
+      { nama, mapel, tipe_soal, tipe_ujian, durasi, tanggal, mulai, selesai, deskripsi, id_guru },
       { where: { id: req.params.id } }
     );
 

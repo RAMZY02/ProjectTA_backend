@@ -39,7 +39,8 @@ module.exports = (sequelize, DataTypes) => {
     },
     jumlah_soal: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: false,
+      defaultValue: 0
     },
     deskripsi: {
       type: DataTypes.TEXT('long'),

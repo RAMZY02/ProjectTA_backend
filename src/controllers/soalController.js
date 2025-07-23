@@ -1,4 +1,5 @@
 const { Soal } = require('../models');
+const { Ujian } = require('../models');
 
 exports.getAllSoal = async (req, res) => {
   try {
@@ -33,7 +34,8 @@ exports.createSoal = async (req, res) => {
     const { id_ujian, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, jawaban, pembahasan, link_video, link_gambar, link_file, link_audio } = req.body;
 
     const newSoal = await Soal.create({ id_ujian, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, jawaban, pembahasan, link_video, link_gambar, link_file, link_audio });
-    res.status(201).json({ success: true, data: newSoal });
+    await Ujian.increment('jumlah_soal', { by: 1, where: { id: id_ujian } });
+    res.status(201).json(newSoal);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -68,6 +70,8 @@ exports.deleteSoal = async (req, res) => {
     if (affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Soal not found' });
     }
+
+    await Ujian.decrement('jumlah_soal', { by: 1, where: { id: req.body.id_ujian } });
 
     res.json({ success: true, message: 'Soal soft deleted (key_status set to inactive)' });
   } catch (error) {
