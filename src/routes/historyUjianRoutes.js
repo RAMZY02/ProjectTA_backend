@@ -8,6 +8,7 @@ router.use(authenticate);
 
 router.get('/', historyUjianController.getAllHistoryUjian);
 router.get('/:userId', historyUjianController.getHistoryUjianByUserId);
+router.get('/uts-uas/:userId', historyUjianController.getHistoryUjianByUserIdUTSandUAS);
 router.post('/', authorize('admin'), historyUjianController.createHistoryUjian);
 router.put('/:id', authorize('admin'), historyUjianController.updateHistoryUjian);
 router.delete('/:id', authorize('admin'), historyUjianController.deleteHistoryUjian);

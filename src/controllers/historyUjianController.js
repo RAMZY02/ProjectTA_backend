@@ -28,6 +28,29 @@ exports.getHistoryUjianByUserId = async (req, res) => {
   }
 };
 
+exports.getHistoryUjianByUserIdUTSandUAS = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const history = await HistoryUjian.findAll({ where: { id_user: userId } });
+    const historyWithUjian = await Promise.all(
+      history.map(async (h) => {
+        const ujian = await Ujian.findOne({ where: { id: h.id_ujian, tipe_ujian: ['UTS', 'UAS'] } });
+        if (ujian) {
+          return {
+            ...h.toJSON(),
+            ujian: ujian.toJSON(),
+          };
+        }
+        return null;
+      })
+    );
+    const filteredHistory = historyWithUjian.filter(item => item !== null);
+    res.json(filteredHistory);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 exports.createHistoryUjian = async (req, res) => {
   try {
     const { id_ujian, id_user, nilai } = req.body;

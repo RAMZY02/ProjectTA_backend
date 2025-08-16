@@ -23,7 +23,12 @@ exports.getAllKupon = async (req, res) => {
 exports.getKuponByUserId = async (req, res) => {
   try {
     const userId = req.params.userId;
-    const kupon = await Kupon.findAll({ where: { id_user: userId } });
+    const kupon = await Kupon.findAll({ 
+      where: { 
+        id_user: userId,
+        status: 'unclaimed'
+      } 
+    });
     const kuponWithHadiah = await Promise.all(
       kupon.map(async (k) => {
         const hadiah = await Hadiah.findOne({ where: { id: k.id_hadiah } });

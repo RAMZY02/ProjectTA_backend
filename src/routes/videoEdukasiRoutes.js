@@ -7,6 +7,7 @@ const { authenticate } = require('../middleware/auth');
 router.use(authenticate);
 
 router.get('/', videoEdukasiController.getAllVideos);
+router.get('/lastId', videoEdukasiController.getLastIdVideo);
 router.post('/', videoEdukasiController.createVideo);
 router.put('/:id', videoEdukasiController.updateVideo);
 router.put('/delete/:id', videoEdukasiController.deleteVideo);

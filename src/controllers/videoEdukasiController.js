@@ -20,19 +20,36 @@ exports.getAllVideos = async (req, res) => {
   }
 };
 
+exports.getLastIdVideo = async (req, res) => {
+  try {
+    const lastVideo = await VideoEdukasi.findOne({
+      order: [['id', 'DESC']]
+    });
+
+    if (!lastVideo) {
+      return res.status(404).json({ success: false, message: 'No videos found' });
+    }
+
+    res.json({idvideo : lastVideo.id});
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 exports.createVideo = async (req, res) => {
   try {
-    const { judul, mata_pelajaran, link_video, kelas, views, likes, durasi, deskripsi } = req.body;
+    const { id_user, judul, mata_pelajaran, link_video, kelas, views, likes, deskripsi } = req.body;
 
     const newVideo = await VideoEdukasi.create({
+      id_user,
       judul,
       mata_pelajaran,
       link_video,
       kelas,
-      views,
-      likes,
-      durasi,
-      deskripsi
+      views: views || 0,
+      likes: likes || 0,
+      deskripsi,
+      key_status: 'active'
     });
     res.status(201).json({ success: true, data: newVideo });
   } catch (error) {
@@ -42,9 +59,9 @@ exports.createVideo = async (req, res) => {
 
 exports.updateVideo = async (req, res) => {
   try {
-    const { judul, mata_pelajaran, link_video, kelas, views, likes, durasi, deskripsi } = req.body;
+    const { judul, mata_pelajaran, link_video, kelas, views, likes, deskripsi } = req.body;
     const [affectedRows] = await VideoEdukasi.update(
-      { judul, mata_pelajaran, link_video, kelas, views, likes, durasi, deskripsi },
+      { judul, mata_pelajaran, link_video, kelas, views, likes, deskripsi },
       { where: { id: req.params.id } }
     );
 

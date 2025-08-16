@@ -1,18 +1,122 @@
 const { Ujian, User } = require('../models');
+const { MengikutiUjian } = require('../models');
+const Op = require('sequelize').Op;
 
 exports.getAllUjian = async (req, res) => {
   try {
     const ujian = await Ujian.findAll({ where: { key_status: 'active' } });
-    const ujianWithGuru = await Promise.all(
+    const ujianWithGuruAndUserDone = await Promise.all(
       ujian.map(async (item) => {
         const guru = await User.findOne({ where: { id: item.id_guru } });
+
+        // Ambil semua user yang sudah selesai ujian ini
+        const mengikuti = await MengikutiUjian.findAll({
+          where: { id_ujian: item.id, selesai: "true" },
+          attributes: ['id_user']
+        });
+        const userDone = mengikuti.map(m => m.id_user);
+
         return {
           ...item.toJSON(),
           guru: guru ? guru.nama : null,
+          userDone
         };
       })
     );
-    res.json(ujianWithGuru);
+    res.json(ujianWithGuruAndUserDone);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getAllUjianBelumSelesai = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const ujian = await Ujian.findAll({
+      where: {
+        key_status: 'active',
+        [Op.or]: [
+          {
+            tanggal: {
+              [Op.gt]: now.toISOString().slice(0, 10)
+            }
+          },
+          {
+            tanggal: {
+              [Op.eq]: now.toISOString().slice(0, 10)
+            },
+            selesai: {
+              [Op.gt]: now.toTimeString().slice(0, 8)
+            }
+          }
+        ]
+      }
+    });
+
+    const ujianWithGuruAndUserDone = await Promise.all(
+      ujian.map(async (item) => {
+        const guru = await User.findOne({ where: { id: item.id_guru } });
+
+        // Ambil semua user yang sudah selesai ujian ini
+        const mengikuti = await MengikutiUjian.findAll({
+          where: { id_ujian: item.id, selesai: "true" },
+          attributes: ['id_user']
+        });
+        const userDone = mengikuti.map(m => m.id_user);
+
+        return {
+          ...item.toJSON(),
+          guru: guru ? guru.nama : null,
+          userDone
+        };
+      })
+    );
+
+    res.json(ujianWithGuruAndUserDone);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getUjianSedangBerlangsung = async (req, res) => {
+  try {
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const currentTime = now.toTimeString().slice(0, 8);
+    const { id_user } = req.query;
+
+    // Cari ujian yang sedang berlangsung
+    const ujianSedang = await Ujian.findAll({
+      where: {
+        key_status: 'active',
+        tanggal: today,
+        mulai: { [Op.lte]: currentTime },
+        selesai: { [Op.gt]: currentTime }
+      }
+    });
+
+    if (ujianSedang.length === 0) {
+      return res.json(false);
+    }
+
+    // Cek kehadiran dan selesai di MengikutiUjian
+    for (const ujian of ujianSedang) {
+      const mengikuti = await MengikutiUjian.findOne({
+        where: {
+          id_user,
+          id_ujian: ujian.id,
+          kehadiran: "true",
+          selesai: "false"
+        }
+      });
+
+      if (mengikuti) {
+        return res.json(true);
+      }
+    }
+
+    res.json(false);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

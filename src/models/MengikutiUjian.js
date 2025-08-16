@@ -15,10 +15,15 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: 0
     },
-    status: {
-      type: DataTypes.STRING(50),
+    kehadiran: {
+      type: DataTypes.STRING(6),
       allowNull: false,
-      defaultValue: 'tidak hadir'
+      defaultValue: 'true'
+    },
+    selesai: {
+      type: DataTypes.STRING(6),
+      allowNull: false,
+      defaultValue: 'false'
     }
   }, {
     tableName: 'mengikuti_ujian',

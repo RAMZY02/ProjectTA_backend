@@ -5,6 +5,10 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true,
       autoIncrement: true
     },
+    id_user: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
     judul: {
       type: DataTypes.STRING(255),
       allowNull: false
@@ -13,12 +17,16 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(255),
       allowNull: false
     },
+    kelas: {
+      type: DataTypes.CHAR(1),
+      allowNull: false
+    },
     link_video: {
       type: DataTypes.TEXT('long'),
       allowNull: false
     },
-    kelas: {
-      type: DataTypes.CHAR(1),
+    deskripsi: {
+      type: DataTypes.STRING(255),
       allowNull: false
     },
     views: {
@@ -30,14 +38,6 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0
-    },
-    durasi: {
-      type: DataTypes.TIME,
-      allowNull: false
-    },
-    deskripsi: {
-      type: DataTypes.STRING(255),
-      allowNull: false
     },
     key_status: {
       type: DataTypes.STRING(12),

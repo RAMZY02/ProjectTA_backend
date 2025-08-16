@@ -4,7 +4,6 @@ const userController = require('../controllers/userController');
 const { authenticate, authorize } = require('../middleware/auth');
 
 // Public routes
-router.post('/register', userController.register);
 router.post('/login', userController.login);
 
 // Protected routes (require authentication)
@@ -16,6 +15,7 @@ router.put('/poin', userController.updatePoin);
 router.put('/profpic', userController.updateProfpic);
 router.put('/change-password', userController.changePassword);
 router.get('/kelas/:kelas', userController.getUsersByKelas);
+router.get('/rapot/:kelas/:mapel', userController.getUserRapotByKelas);
 
 // Admin-only routes
 router.get('/', authorize('admin'), userController.getAllUsers);

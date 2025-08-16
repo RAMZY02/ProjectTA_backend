@@ -2,6 +2,13 @@ const { User } = require('../models');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const authConfig = require('../config/auth');
+const { Op } = require('sequelize');
+const { HistoryUjian, Ujian } = require('../models');
+
+// Ensure association exists
+if (!HistoryUjian.associations || !HistoryUjian.associations.ujian) {
+  HistoryUjian.belongsTo(Ujian, { foreignKey: 'id_ujian', as: 'ujian' });
+}
 
 // Helper function to generate JWT token
 const generateToken = (user) => {
@@ -10,45 +17,6 @@ const generateToken = (user) => {
     authConfig.jwtSecret,
     { expiresIn: authConfig.jwtExpiresIn }
   );
-};
-
-// Register new user
-exports.register = async (req, res) => {
-  try {
-    const { email, password, nama, role, kelas } = req.body;
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, authConfig.bcryptSaltRounds);
-
-    const user = await User.create({
-      email,
-      password: hashedPassword,
-      nama,
-      role,
-      kelas: role === 'siswa' ? kelas : null
-    });
-
-    // Remove password from response
-    const userResponse = user.toJSON();
-    delete userResponse.password;
-
-    res.status(201).json({
-      success: true,
-      data: userResponse,
-      token: generateToken(user)
-    });
-  } catch (error) {
-    if (error.name === 'SequelizeUniqueConstraintError') {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Email already exists' 
-      });
-    }
-    res.status(500).json({ 
-      success: false,
-      message: error.message 
-    });
-  }
 };
 
 // User login
@@ -312,6 +280,67 @@ exports.getUsersByKelas = async (req, res) => {
   }
 };
 
+exports.getUserRapotByKelas = async (req, res) => {
+  try {
+    const { kelas, mapel } = req.params;
+
+    // Get all siswa in kelas
+    const users = await User.findAll({
+      where: {
+        kelas,
+        key_status: 'active',
+        role: 'siswa'
+      },
+      attributes: { exclude: ['password'] }
+    });
+
+    // For each user, get UTS and UAS score from HistoryUjian
+    const userRapotPromises = users.map(async (user) => {
+      // Find UTS
+      // Find UTS
+      const uts = await HistoryUjian.findOne({
+        where: {
+          id_user: user.id,
+        },
+        include: [{
+          model: require('../models').Ujian,
+          as: 'ujian',
+          where: { mapel, tipe_ujian: 'uts' }
+        }]
+      });
+
+      // Find UAS
+      const uas = await HistoryUjian.findOne({
+        where: {
+          id_user: user.id,
+        },
+        include: [{
+          model: require('../models').Ujian,
+          as: 'ujian',
+          where: { mapel, tipe_ujian: 'uas' }
+        }]
+      });
+
+      const userData = user.toJSON();
+      userData.uts = uts ? uts.nilai.toString() : "-";
+      userData.uas = uas ? uas.nilai.toString() : "-";
+
+      return userData;
+    });
+
+    const userRapot = await Promise.all(userRapotPromises);
+
+    res.json(
+      userRapot
+    );
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 /**
  * Add a new user (admin only)
  */
@@ -324,9 +353,7 @@ exports.addUser = async (req, res) => {
       });
     }
 
-    const { email, password, nama, role, kelas } = req.body;
-    console.log(`Adding user: ${email}, Role: ${role}, Kelas: ${kelas}`);
-    
+    const { email, password, nama, role, kelas, nomor_ortu, mapel } = req.body;
 
     // Check if email already exists
     const existingUser = await User.findOne({ where: { email } });
@@ -344,7 +371,9 @@ exports.addUser = async (req, res) => {
       password: hashedPassword,
       nama,
       role,
-      kelas: role === 'siswa' ? kelas : '-'
+      nomor_ortu,
+      kelas: role === 'siswa' ? kelas : '-',
+      mapel: role === 'guru' ? mapel : '-'
     });
 
     const userResponse = user.toJSON();
@@ -375,7 +404,7 @@ exports.updateUser = async (req, res) => {
     }
 
     const { id_user } = req.params;
-    const { email, nama, role, kelas} = req.body;
+    const { email, nama, role, kelas, nomor_ortu, mapel } = req.body;
 
     const user = await User.findByPk(id_user);
     if (!user) {
@@ -399,7 +428,9 @@ exports.updateUser = async (req, res) => {
 
     if (nama !== undefined) user.nama = nama;
     if (role !== undefined) user.role = role;
+    if (nomor_ortu !== undefined) user.nomor_ortu = nomor_ortu;
     if (kelas !== undefined) user.kelas = role === 'siswa' ? kelas : '-';
+    if (mapel !== undefined) user.mapel = role === 'guru' ? mapel : '-';
 
     await user.save();
 

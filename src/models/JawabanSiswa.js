@@ -5,11 +5,11 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true,
       autoIncrement: true
     },
-    id_ujian: {
+    id_user: {
       type: DataTypes.INTEGER,
       allowNull: false
     },
-    id_user: {
+    id_ujian: {
       type: DataTypes.INTEGER,
       allowNull: false
     },
@@ -17,8 +17,12 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false
     },
+    urutan: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
     jawaban: {
-      type: DataTypes.TEXT,
+      type: DataTypes.TEXT('long'),
       allowNull: false
     },
     nilai: {

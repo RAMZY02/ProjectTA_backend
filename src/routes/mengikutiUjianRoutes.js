@@ -7,6 +7,8 @@ const { authenticate } = require('../middleware/auth');
 router.use(authenticate);
 
 router.post('/', mengikutiUjianController.joinUjian);
-router.get('/:id', mengikutiUjianController.getStatusUjian);
+router.get('/', mengikutiUjianController.getAllMengikutiUjian);
+router.get('/:id_user/:id_ujian', mengikutiUjianController.getMengikutiUjianById);
+router.put('/selesai/:id_user/:id_ujian', mengikutiUjianController.updateSelesai);
 
 module.exports = router;
