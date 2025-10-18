@@ -64,7 +64,7 @@ exports.getSoalByUrutan = async (req, res) => {
             id_ujian,
             id_soal: soal.id,
             urutan: urutanArr[idx],
-            jawaban: '-',
+            jawaban: '',
             nilai: 0
           })
         )
@@ -99,8 +99,8 @@ exports.getSoalByUjianIdandUserId = async (req, res) => {
   try {
     const soal = await Soal.findAll({
       where: {
-      id_ujian: req.params.id_ujian,
-      key_status: 'active'
+        id_ujian: req.params.id_ujian,
+        key_status: 'active'
       }
     });
 
@@ -116,18 +116,20 @@ exports.getSoalByUjianIdandUserId = async (req, res) => {
     // Attach jawabanSiswa to each soal
     const soalWithJawaban = await Promise.all(
       soal.map(async (item) => {
-      const jawabanSiswa = await JawabanSiswa.findOne({
-        where: {
-        id_user: id_user,
-        id_ujian: req.params.id_ujian,
-        id_soal: item.id
-        }
-      });
-      return {
-        ...item.toJSON(),
-        jawabanSiswa: jawabanSiswa ? jawabanSiswa.jawaban : null,
-        nilaiSiswa: jawabanSiswa ? jawabanSiswa.nilai : null
-      };
+
+        const jawabanSiswa = await JawabanSiswa.findOne({
+          where: {
+            id_user: id_user,
+            id_ujian: req.params.id_ujian,
+            id_soal: item.id
+          }
+        });
+
+        return {
+          ...item.toJSON(),
+          jawabanSiswa: jawabanSiswa ? jawabanSiswa.jawaban : null,
+          nilaiSiswa: jawabanSiswa ? jawabanSiswa.nilai : null
+        };
       })
     );
 

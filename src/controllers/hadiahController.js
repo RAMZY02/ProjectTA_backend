@@ -1,4 +1,5 @@
-const { Hadiah, User } = require('../models');
+const e = require('express');
+const { Hadiah, User, MataPelajaran } = require('../models');
 
 exports.getAllHadiah = async (req, res) => {
   try {
@@ -78,6 +79,7 @@ exports.tukarHadiah = async (req, res) => {
     // Ambil user dan hadiah
     const user = await User.findByPk(userId);
     const hadiah = await Hadiah.findByPk(hadiahId);
+    const mapelData = await MataPelajaran.findByPk(user.id_mapel);
 
     if (!user) {
       return res.status(404).json({ success: false, message: 'User tidak ditemukan' });
@@ -102,7 +104,7 @@ exports.tukarHadiah = async (req, res) => {
     await user.save();
     await hadiah.save();
 
-    res.json({user: user,hadiah : hadiah});
+    res.json({user: {...user.toJSON(), mapel : mapelData ? mapelData.mapel : '-'}, hadiah : hadiah});
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

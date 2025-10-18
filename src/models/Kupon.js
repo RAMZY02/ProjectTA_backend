@@ -26,6 +26,10 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: DataTypes.NOW
     },
+    kadaluarsa: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
     status: {
       type: DataTypes.STRING(255),
       allowNull: false,

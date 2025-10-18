@@ -1,0 +1,6 @@
+2025/09/27-21:40:09.948 5a64 Reusing MANIFEST D:\Semester 8\TA\Program\project_ta_backend\sessions\session-my-client\Default\Local Storage\leveldb/MANIFEST-000001
+2025/09/27-21:40:09.949 5a64 Recovering log #7
+2025/09/27-21:40:09.950 5a64 Reusing old log D:\Semester 8\TA\Program\project_ta_backend\sessions\session-my-client\Default\Local Storage\leveldb/000007.log 
+2025/09/27-21:50:17.633 1e20 Level-0 table #11: started
+2025/09/27-21:50:17.642 1e20 Level-0 table #11: 14816 bytes OK
+2025/09/27-21:50:17.645 1e20 Delete type=0 #7

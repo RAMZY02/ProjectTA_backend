@@ -47,7 +47,13 @@ exports.getKuponByUserId = async (req, res) => {
 exports.createKupon = async (req, res) => {
   try {
     const { id_hadiah, id_user, kode, tipe } = req.body;
-    const kupon = await Kupon.create({ id_hadiah, id_user, kode, tipe });
+
+    // Calculate the expiration date (1 month from now)
+    const currentDate = new Date();
+    const kadaluarsa = new Date(currentDate.setMonth(currentDate.getMonth() + 1));
+    kadaluarsa.setDate(1);
+
+    const kupon = await Kupon.create({ id_hadiah, id_user, kode, tipe, kadaluarsa });
     res.status(201).json(kupon);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

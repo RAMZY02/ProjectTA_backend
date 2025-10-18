@@ -9,9 +9,19 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(50),
       allowNull: false
     },
-    mapel: {
-      type: DataTypes.STRING(50),
+    id_mapel: {
+      type: DataTypes.INTEGER,
       allowNull: false
+    },
+    tingkatan: {
+      type: DataTypes.STRING(1),
+      allowNull: false,
+      defaultValue: '-'
+    },
+    kelas: {
+      type: DataTypes.STRING(2),
+      allowNull: false,
+      defaultValue: '-'
     },
     tipe_soal: {
       type: DataTypes.STRING(50),
@@ -19,10 +29,6 @@ module.exports = (sequelize, DataTypes) => {
     },
     tipe_ujian: {
       type: DataTypes.STRING(50),
-      allowNull: false
-    },
-    durasi: {
-      type: DataTypes.TIME,
       allowNull: false
     },
     tanggal: {
@@ -46,7 +52,15 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT('long'),
       allowNull: false
     },
+    kode: {
+      type: DataTypes.STRING(6),
+      allowNull: false,
+    },
     id_guru: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    id_tahun_pelajaran: {
       type: DataTypes.INTEGER,
       allowNull: false
     },

@@ -28,6 +28,16 @@ module.exports = (sequelize, DataTypes) => {
         notEmpty: true
       }
     },
+    nis: {
+      type: DataTypes.STRING(30),
+      allowNull: false,
+      defaultValue: '-'
+    },
+    nisn: {
+      type: DataTypes.STRING(30),
+      allowNull: false,
+      defaultValue: '-'
+    },
     role: {
       type: DataTypes.STRING(5),
       allowNull: false,
@@ -42,12 +52,21 @@ module.exports = (sequelize, DataTypes) => {
     },
     kelas: {
       type: DataTypes.STRING(2),
-      allowNull: true,
+      allowNull: false,
       defaultValue: '-'
     },
-    mapel: {
-      type: DataTypes.STRING(20),
-      allowNull: true,
+    agama: {
+      type: DataTypes.STRING(12),
+      allowNull: false,
+    },
+    id_mapel: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
+    },
+    wali_kelas: {
+      type: DataTypes.STRING(2),
+      allowNull: false,
       defaultValue: '-'
     },
     poin: {

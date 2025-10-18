@@ -1,6 +1,0 @@
-2025/08/05-06:47:17.738 f84 Reusing MANIFEST D:\Semester 8\TA\Program\project_ta_backend\session-my-client\Default\Local Storage\leveldb/MANIFEST-000001
-2025/08/05-06:47:17.738 f84 Recovering log #4
-2025/08/05-06:47:17.739 f84 Reusing old log D:\Semester 8\TA\Program\project_ta_backend\session-my-client\Default\Local Storage\leveldb/000004.log 
-2025/08/05-07:37:26.383 3158 Level-0 table #8: started
-2025/08/05-07:37:26.388 3158 Level-0 table #8: 13480 bytes OK
-2025/08/05-07:37:26.391 3158 Delete type=0 #4

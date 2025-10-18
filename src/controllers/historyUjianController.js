@@ -1,8 +1,10 @@
-const { HistoryUjian, Ujian } = require('../models');
+const { HistoryUjian, Ujian, MataPelajaran, TahunPelajaran } = require('../models');
 
 exports.getAllHistoryUjian = async (req, res) => {
   try {
-    const history = await HistoryUjian.findAll();
+    const tahunPelajaran = await TahunPelajaran.findOne({ order: [['id', 'DESC']] });
+    const id_tahun_pelajaran = tahunPelajaran ? tahunPelajaran.id : 1;
+    const history = await HistoryUjian.findAll({ where: { id_tahun_pelajaran } });
     res.json({ success: true, data: history });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -12,13 +14,19 @@ exports.getAllHistoryUjian = async (req, res) => {
 exports.getHistoryUjianByUserId = async (req, res) => {
   try {
     const userId = req.params.userId;
-    const history = await HistoryUjian.findAll({ where: { id_user: userId } });
+    const tahunPelajaran = await TahunPelajaran.findOne({ order: [['id', 'DESC']] });
+    const id_tahun_pelajaran = tahunPelajaran ? tahunPelajaran.id : 1;
+    const history = await HistoryUjian.findAll({ where: { id_user: userId, id_tahun_pelajaran } });
     const historyWithUjian = await Promise.all(
       history.map(async (h) => {
         const ujian = await Ujian.findOne({ where: { id: h.id_ujian } });
+        const mapelData = await MataPelajaran.findOne({ where: { id: ujian.id_mapel } });
         return {
           ...h.toJSON(),
-          ujian: ujian ? ujian.toJSON() : null,
+          ujian: ujian ? {
+            ...ujian.toJSON(),
+            mapel: mapelData ? mapelData.mapel : '-',
+          } : '-',
         };
       })
     );
@@ -31,19 +39,27 @@ exports.getHistoryUjianByUserId = async (req, res) => {
 exports.getHistoryUjianByUserIdUTSandUAS = async (req, res) => {
   try {
     const userId = req.params.userId;
-    const history = await HistoryUjian.findAll({ where: { id_user: userId } });
+    const tahunPelajaran = await TahunPelajaran.findOne({ order: [['id', 'DESC']] });
+    const id_tahun_pelajaran = tahunPelajaran ? tahunPelajaran.id : 1;
+    const history = await HistoryUjian.findAll({ where: { id_user: userId, id_tahun_pelajaran } });
     const historyWithUjian = await Promise.all(
       history.map(async (h) => {
         const ujian = await Ujian.findOne({ where: { id: h.id_ujian, tipe_ujian: ['UTS', 'UAS'] } });
+        
         if (ujian) {
+          const mapelData = await MataPelajaran.findOne({ where: { id: ujian.id_mapel } });
           return {
             ...h.toJSON(),
-            ujian: ujian.toJSON(),
+            ujian: ujian ? {
+              ...ujian.toJSON(),
+              mapel: mapelData ? mapelData.mapel : '-',
+            } : '-',
           };
         }
         return null;
       })
     );
+    
     const filteredHistory = historyWithUjian.filter(item => item !== null);
     res.json(filteredHistory);
   } catch (error) {
@@ -53,8 +69,10 @@ exports.getHistoryUjianByUserIdUTSandUAS = async (req, res) => {
 
 exports.createHistoryUjian = async (req, res) => {
   try {
-    const { id_ujian, id_user, nilai } = req.body;
-    const history = await HistoryUjian.create({ id_ujian, id_user, nilai });
+    const { id_ujian, id_user, nilai, kehadiran = 'true', selesai = 'false', diperiksa = 'false' } = req.body;
+    const tahunPelajaran = await TahunPelajaran.findOne({ order: [['id', 'DESC']] });
+    const id_tahun_pelajaran = tahunPelajaran ? tahunPelajaran.id : 1;
+    const history = await HistoryUjian.create({ id_ujian, id_user, nilai, kehadiran, selesai, diperiksa, id_tahun_pelajaran });
     res.status(201).json({ success: true, data: history });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -63,8 +81,11 @@ exports.createHistoryUjian = async (req, res) => {
 
 exports.updateHistoryUjian = async (req, res) => {
   try {
-    const { id_ujian, id_user, nilai } = req.body;
-    const [affectedRows] = await HistoryUjian.update({ id_ujian, id_user, nilai }, { where: { id: req.params.id } });
+    const { id_ujian, id_user, nilai, kehadiran, selesai, diperiksa } = req.body;
+    const [affectedRows] = await HistoryUjian.update(
+      { id_ujian, id_user, nilai, kehadiran, selesai, diperiksa },
+      { where: { id_ujian, id_user } }
+    );
     if (affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'History ujian not found' });
     }

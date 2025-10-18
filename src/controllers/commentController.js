@@ -1,4 +1,4 @@
-const { Comment, User, LikeComment } = require('../models');
+const { Comment, User, LikeComment, MataPelajaran } = require('../models');
 
 exports.getComments = async (req, res) => {
   try {
@@ -8,6 +8,13 @@ exports.getComments = async (req, res) => {
         const user = await User.findOne({ where: { id: item.id_user } });
         const likes = await LikeComment.findAll({ where: { id_comment: item.id, type: 'Y' } });
         const liked = likes.map((like) => like.id_user);
+        const mapelData = await MataPelajaran.findOne({ where: { id: user.id_mapel } });
+        if (user && mapelData) {
+          user.dataValues.mapel = mapelData.mapel;
+        }
+        else{
+          user.dataValues.mapel = '-';
+        }
 
         return {
           id: item.id,
@@ -70,6 +77,13 @@ exports.getCommentByVideoId = async (req, res) => {
         const user = await User.findOne({ where: { id: item.id_user } });
         const likes = await LikeComment.findAll({ where: { id_comment: item.id, type: 'Y' } });
         const liked = likes.map((like) => like.id_user);
+        const mapelData = await MataPelajaran.findOne({ where: { id: user.id_mapel } });
+        if (user && mapelData) {
+          user.dataValues.mapel = mapelData.mapel;
+        }
+        else{
+          user.dataValues.mapel = '-';
+        }
 
         return {
           id: item.id,

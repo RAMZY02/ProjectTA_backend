@@ -1,4 +1,4 @@
-const { VideoEdukasi, LikeVideo} = require('../models');
+const { VideoEdukasi, LikeVideo, User, MataPelajaran} = require('../models');
 
 exports.getAllVideos = async (req, res) => {
   try {
@@ -8,9 +8,17 @@ exports.getAllVideos = async (req, res) => {
         const likes = await LikeVideo.findAll({ where: { id_video: item.id, type: 'Y' } });
         const liked = likes.map((like) => like.id_user);
 
+        const user = await User.findByPk(item.id_user);
+        if (user) {
+          item.dataValues.nama_user = user.nama;
+        }
+
+        const mapelData = await MataPelajaran.findByPk(item.id_mapel);
+
         return {
           ...item.dataValues,
           liked: liked,
+          mapel: mapelData ? mapelData.mapel : '-'
         };
       })
     );
@@ -38,16 +46,17 @@ exports.getLastIdVideo = async (req, res) => {
 
 exports.createVideo = async (req, res) => {
   try {
-    const { id_user, judul, mata_pelajaran, link_video, kelas, views, likes, deskripsi } = req.body;
+    const { id_user, judul, id_mapel, link_video, thumbnail, kelas, views, likes, deskripsi } = req.body;
 
     const newVideo = await VideoEdukasi.create({
       id_user,
       judul,
-      mata_pelajaran,
+      id_mapel,
       link_video,
+      thumbnail: thumbnail || '-',
       kelas,
-      views: views || 0,
-      likes: likes || 0,
+      views: 0,
+      likes: 0,
       deskripsi,
       key_status: 'active'
     });
@@ -59,9 +68,9 @@ exports.createVideo = async (req, res) => {
 
 exports.updateVideo = async (req, res) => {
   try {
-    const { judul, mata_pelajaran, link_video, kelas, views, likes, deskripsi } = req.body;
+    const { judul, id_mapel, link_video, thumbnail, kelas, views, likes, deskripsi } = req.body;
     const [affectedRows] = await VideoEdukasi.update(
-      { judul, mata_pelajaran, link_video, kelas, views, likes, deskripsi },
+      { judul, id_mapel, link_video, thumbnail, kelas, views, likes, deskripsi },
       { where: { id: req.params.id } }
     );
 

@@ -11,11 +11,11 @@ module.exports = {
     logging: console.log
   },
   production: {
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
+    username: process.env.DB_USER_HOSTED,
+    password: process.env.DB_PASSWORD_HOSTED,
+    database: process.env.DB_NAME_HOSTED,
+    host: process.env.DB_HOST_HOSTED,
+    port: process.env.DB_PORT_HOSTED,
     dialect: 'mysql',
     logging: console.log
   }

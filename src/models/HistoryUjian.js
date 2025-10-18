@@ -13,14 +13,33 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false
     },
+    kehadiran: {
+      type: DataTypes.STRING(6),
+      allowNull: false,
+      defaultValue: 'true'
+    },
+    selesai: {
+      type: DataTypes.STRING(6),
+      allowNull: false,
+      defaultValue: 'false'
+    },
     nilai: {
       type: DataTypes.INTEGER,
       allowNull: false
+    },
+    diperiksa: {
+      type: DataTypes.STRING(6),
+      allowNull: false,
+      defaultValue: 'false'
     },
     timpstamps: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW
+    },
+    id_tahun_pelajaran: {
+      type: DataTypes.INTEGER,
+      allowNull: false
     }
   }, {
     tableName: 'history_ujian',

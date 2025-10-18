@@ -13,8 +13,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(255),
       allowNull: false
     },
-    mata_pelajaran: {
-      type: DataTypes.STRING(255),
+    id_mapel: {
+      type: DataTypes.INTEGER,
       allowNull: false
     },
     kelas: {
@@ -22,7 +22,11 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false
     },
     link_video: {
-      type: DataTypes.TEXT('long'),
+      type: DataTypes.STRING(100),
+      allowNull: false
+    },
+    thumbnail: {
+      type: DataTypes.STRING(100),
       allowNull: false
     },
     deskripsi: {

@@ -7,7 +7,7 @@ router.use(authenticate);
 
 router.get('/', historyVideoController.getAllHistory);
 router.get('/user/:userId', historyVideoController.getHistoryByUser);
-router.post('/', historyVideoController.createHistory);
+router.post('/', historyVideoController.createOrUpdateHistory);
 router.delete('/:id', historyVideoController.deleteHistory);
 
 module.exports = router;
