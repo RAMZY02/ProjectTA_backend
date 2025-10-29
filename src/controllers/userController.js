@@ -815,7 +815,7 @@ exports.updateUser = async (req, res) => {
     if (nomor_ortu !== undefined) user.nomor_ortu = nomor_ortu;
     if (kelas !== undefined) user.kelas = role === 'siswa' ? kelas : '-';
     if (agama !== undefined) user.agama = role === 'siswa' ? agama : '-';
-    if (id_mapel !== undefined) user.mapel = role === 'guru' ? mapel : 0;
+    if (id_mapel !== undefined) user.id_mapel = role === 'guru' ? id_mapel : 0;
     if (wali_kelas !== undefined) user.wali_kelas = wali_kelas;
     if (poin !== undefined) user.poin = poin;
     if (profpic !== undefined) user.profpic = profpic;
