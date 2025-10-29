@@ -86,9 +86,7 @@ exports.updateHistoryUjian = async (req, res) => {
       { id_ujian, id_user, nilai, kehadiran, selesai, diperiksa },
       { where: { id_ujian, id_user } }
     );
-    if (affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'History ujian not found' });
-    }
+
     const updated = await HistoryUjian.findByPk(req.params.id);
     res.json({ success: true, data: updated });
   } catch (error) {
@@ -99,9 +97,7 @@ exports.updateHistoryUjian = async (req, res) => {
 exports.deleteHistoryUjian = async (req, res) => {
   try {
     const affectedRows = await HistoryUjian.destroy({ where: { id: req.params.id } });
-    if (affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'History ujian not found' });
-    }
+
     res.json({ success: true, message: 'History ujian deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

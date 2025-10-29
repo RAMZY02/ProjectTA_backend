@@ -65,10 +65,6 @@ exports.updateKupon = async (req, res) => {
     const { id_hadiah, kode, tipe, status } = req.body;
     const [affectedRows] = await Kupon.update({ id_hadiah, kode, tipe, status }, { where: { id: req.params.id } });
 
-    if (affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Kupon not found' });
-    }
-
     const updatedKupon = await Kupon.findByPk(req.params.id);
     res.json({ success: true, data: updatedKupon });
   } catch (error) {
@@ -84,10 +80,6 @@ exports.claimKupon = async (req, res) => {
       { where: { id: kuponId } }
     );
 
-    if (affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Kupon not found' });
-    }
-
     const updatedKupon = await Kupon.findByPk(kuponId);
     res.json({ success: true, data: updatedKupon });
   } catch (error) {
@@ -98,10 +90,6 @@ exports.claimKupon = async (req, res) => {
 exports.deleteKupon = async (req, res) => {
   try {
     const affectedRows = await Kupon.destroy({ where: { id: req.params.id } });
-
-    if (affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Kupon not found' });
-    }
 
     res.json({ success: true, message: 'Kupon deleted successfully' });
   } catch (error) {

@@ -44,10 +44,6 @@ exports.updateHadiah = async (req, res) => {
       { where: { id: req.params.id } }
     );
 
-    if (affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Hadiah not found' });
-    }
-
     const updatedHadiah = await Hadiah.findByPk(req.params.id);
     res.json({ success: true, data: updatedHadiah });
   } catch (error) {
@@ -61,10 +57,6 @@ exports.deleteHadiah = async (req, res) => {
       { key_status: 'inactive' },
       { where: { id: req.params.id } }
     );
-
-    if (affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Hadiah not found' });
-    }
 
     res.json({ success: true, message: 'Hadiah soft deleted (key_status set to inactive)' });
   } catch (error) {

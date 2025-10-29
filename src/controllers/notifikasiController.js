@@ -26,10 +26,6 @@ exports.updateNotifikasi = async (req, res) => {
     const { status } = req.body;
     const [affectedRows] = await Notifikasi.update({ status }, { where: { id: req.params.id } });
 
-    if (affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Notifikasi not found' });
-    }
-
     const updatedNotifikasi = await Notifikasi.findByPk(req.params.id);
     res.json({ success: true, data: updatedNotifikasi });
   } catch (error) {
@@ -40,10 +36,6 @@ exports.updateNotifikasi = async (req, res) => {
 exports.deleteNotifikasi = async (req, res) => {
   try {
     const affectedRows = await Notifikasi.destroy({ where: { id: req.params.id } });
-
-    if (affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Notifikasi not found' });
-    }
 
     res.json({ success: true, message: 'Notifikasi deleted successfully' });
   } catch (error) {
@@ -60,10 +52,6 @@ exports.markAsRead = async (req, res) => {
       { status: 'dibaca' },
       { where: { id, id_user } }
     );
-
-    if (affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Notifikasi not found or not owned by user' });
-    }
 
     const updatedNotifikasi = await Notifikasi.findByPk(id);
     res.json({ success: true, data: updatedNotifikasi });

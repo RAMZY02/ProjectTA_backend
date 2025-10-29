@@ -66,6 +66,21 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: '-'
     },
+    link_video_pembahasan: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: '-'
+    },
+    link_gambar_pembahasan: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: '-'
+    },
+    link_audio_pembahasan: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: '-'
+    },
     key_status: {
       type: DataTypes.STRING(12),
       allowNull: false,

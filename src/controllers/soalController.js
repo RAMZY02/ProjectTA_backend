@@ -141,9 +141,9 @@ exports.getSoalByUjianIdandUserId = async (req, res) => {
 
 exports.createSoal = async (req, res) => {
   try {
-    const { id_ujian, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, jawaban, pembahasan, link_video, link_gambar, link_audio } = req.body;
+    const { id_ujian, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, jawaban, pembahasan, link_video, link_gambar, link_audio, link_video_pembahasan, link_gambar_pembahasan, link_audio_pembahasan } = req.body;
 
-    const newSoal = await Soal.create({ id_ujian, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, jawaban, pembahasan, link_video, link_gambar, link_audio });
+    const newSoal = await Soal.create({ id_ujian, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, jawaban, pembahasan, link_video, link_gambar, link_audio, link_video_pembahasan, link_gambar_pembahasan, link_audio_pembahasan });
     await Ujian.increment('jumlah_soal', { by: 1, where: { id: id_ujian } });
     res.status(201).json(newSoal);
   } catch (error) {
@@ -153,9 +153,9 @@ exports.createSoal = async (req, res) => {
 
 exports.updateSoal = async (req, res) => {
   try {
-    const { tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, jawaban, pembahasan, link_video, link_gambar, link_audio } = req.body;
+    const { tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, jawaban, pembahasan, link_video, link_gambar, link_audio, link_video_pembahasan, link_gambar_pembahasan, link_audio_pembahasan } = req.body;
     const [affectedRows] = await Soal.update(
-      { tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, jawaban, pembahasan, link_video, link_gambar, link_audio },
+      { tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, jawaban, pembahasan, link_video, link_gambar, link_audio, link_video_pembahasan, link_gambar_pembahasan, link_audio_pembahasan },
       { where: { id: req.params.id } }
     );
 

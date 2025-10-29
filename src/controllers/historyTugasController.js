@@ -44,9 +44,7 @@ exports.updateHistoryTugas = async (req, res) => {
             { id_pengumpulan_tugas },
             { where: { id: req.params.id } }
         );
-        if (affectedRows === 0) {
-            return res.status(404).json({ success: false, message: 'History tugas not found' });
-        }
+
         const updated = await HistoryTugas.findByPk(req.params.id);
         res.json({ success: true, data: updated });
     } catch (error) {
@@ -57,9 +55,6 @@ exports.updateHistoryTugas = async (req, res) => {
 exports.deleteHistoryTugas = async (req, res) => {
     try {
         const affectedRows = await HistoryTugas.destroy({ where: { id: req.params.id } });
-        if (affectedRows === 0) {
-            return res.status(404).json({ success: false, message: 'History tugas not found' });
-        }
         res.json({ success: true, message: 'History tugas deleted successfully' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

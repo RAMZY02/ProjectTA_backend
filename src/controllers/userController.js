@@ -155,12 +155,6 @@ exports.updateProfile = async (req, res) => {
       where: { id: userId }
     });
 
-    if (affectedRows === 0) {
-      return res.status(404).json({ 
-        success: false,
-        message: 'User not found' 
-      });
-    }
 
     const updatedUser = await User.findByPk(userId, {
       attributes: { exclude: ['password'] }
@@ -221,13 +215,6 @@ exports.updateProfpic = async (req, res) => {
       { profpic },
       { where: { id: userId } }
     );
-
-    if (affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
 
     const updatedUser = await User.findByPk(userId, {
       attributes: { exclude: ['password'] }
@@ -455,7 +442,7 @@ exports.getUsersByKelasAndUjian = async (req, res) => {
             id_ujian, 
             id_user: item.id 
           },
-          attributes: ['nilai']
+          attributes: ['nilai', 'diperiksa']
         });
 
         const mapel = await MataPelajaran.findByPk(item.id_mapel);
@@ -463,7 +450,7 @@ exports.getUsersByKelasAndUjian = async (req, res) => {
         return {
           ...item.toJSON(),
           nilai: nilai ? nilai.nilai : null,
-          diperiksa: nilai !== null,
+          diperiksa: nilai ? nilai.diperiksa : null,
           mapel: mapel ? mapel.mapel : '-'
         };
       })

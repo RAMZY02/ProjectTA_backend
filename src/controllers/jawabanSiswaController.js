@@ -47,9 +47,6 @@ exports.updateJawaban = async (req, res) => {
       }
     );
 
-    if (affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Jawaban not found' });
-    }
 
     const updatedJawaban = await JawabanSiswa.findOne({
       where: {

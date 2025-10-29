@@ -3,257 +3,195 @@ const app = express();
 const cors = require('cors');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const QRCode = require('qrcode'); // Install: npm install qrcode
 const path = require('path');
 const fs = require('fs');
-const { exec, spawn } = require('child_process');
+const { exec } = require('child_process');
 
-// // Buat folder session jika belum ada
-// const sessionDir = './sessions';
-// if (!fs.existsSync(sessionDir)) {
-//     fs.mkdirSync(sessionDir, { recursive: true });
-// }
+// 🟢 Buat folder session jika belum ada
+const sessionDir = './sessions';
+if (!fs.existsSync(sessionDir)) {
+  fs.mkdirSync(sessionDir, { recursive: true });
+}
 
-// // Variabel status global
-// let isClientReady = false;
-// let isAuthenticated = false;
-// let clientState = 'initializing';
-// let loadingProgress = 0;
-// let reconnectAttempts = 0;
-// const MAX_RECONNECT_ATTEMPTS = 5;
-// let loadingStartTime = null;
-// let loadingTimeout = null;
-// let browserProcess = null;
+// 🟢 Status global
+let isClientReady = false;
+let isAuthenticated = false;
+let clientState = 'idle';
+let clientInitialized = false;
+let currentQR = null; // Simpan QR code sementara
 
-// // Custom Auth Strategy untuk handle EBUSY error
-// class SafeLocalAuth extends LocalAuth {
-//     async logout() {
-//         try {
-//             await super.logout();
-//             console.log('✅ Logout successful');
-//         } catch (error) {
-//             if (error.message.includes('EBUSY') || error.message.includes('resource busy')) {
-//                 console.warn('⚠️  EBUSY error during logout, skipping file cleanup');
-//                 // Skip file cleanup jika resource busy
-//                 return;
-//             }
-//             throw error;
-//         }
-//     }
-// }
+// 🟢 Custom Auth Strategy aman
+class SafeLocalAuth extends LocalAuth {
+  async logout() {
+    try {
+      await super.logout();
+      console.log('✅ Logout successful');
+    } catch (error) {
+      if (error.message.includes('EBUSY')) {
+        console.warn('⚠️ EBUSY during logout, skipping cleanup');
+        return;
+      }
+      throw error;
+    }
+  }
+}
 
-// const client = new Client({
-//   puppeteer: {
-//     headless: true,
-//     args: [
-//       '--no-sandbox',
-//       '--disable-setuid-sandbox',
-//       '--disable-dev-shm-usage',
-//       '--disable-accelerated-2d-canvas',
-//       '--no-first-run',
-//       '--no-zygote',
-//       '--single-process',
-//       '--disable-background-timer-throttling',
-//       '--disable-renderer-backgrounding',
-//       '--disable-extensions',
-//       '--disable-backgrounding-occluded-windows',
-//       '--disable-breakpad',
-//       '--disable-component-extensions-with-background-pages',
-//       '--disable-features=TranslateUI,BlinkGenPropertyTrees',
-//       '--disable-ipc-flooding-protection',
-//       '--disable-notifications',
-//       '--disable-background-networking',
-//       '--disable-default-apps',
-//       '--disable-sync',
-//       '--disable-web-resources',
-//       '--enable-automation',
-//       '--password-store=basic',
-//       '--use-mock-keychain',
-//       '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-//       '--window-size=1920,1080',
-//       '--start-maximized'
-//     ],
-//     executablePath: process.env.CHROME_PATH || undefined,
-//     ignoreHTTPSErrors: true,
-//     defaultViewport: null,
-//     timeout: 120000,
-//     protocolTimeout: 120000
-//   },
-//   authStrategy: new SafeLocalAuth({
-//     dataPath: path.resolve(sessionDir),
-//     clientId: 'my-client'
-//   }),
-//   webVersionCache: {
-//     type: 'remote',
-//     remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html'
-//   },
-//   takeoverOnConflict: false,
-//   takeoverTimeoutMs: 0,
-//   qrTimeoutMs: 0,
-//   restartOnAuthFail: false, // Nonaktifkan restart on auth fail
-// });
+let client;
 
-// // Fungsi untuk kill Chrome processes di Windows
-// async function killChromeProcesses() {
-//   return new Promise((resolve) => {
-//     if (process.platform === 'win32') {
-//       exec('taskkill /f /im chrome.exe /im chromedriver.exe /im chromium.exe', (error) => {
-//         if (!error) console.log('✅ Chrome processes killed');
-//         resolve();
-//       });
-//     } else {
-//       exec('pkill -f "chrome|chromium|chromedriver"', (error) => {
-//         if (!error) console.log('✅ Chrome processes killed');
-//         resolve();
-//       });
-//     }
-//   });
-// }
+// 🟢 Fungsi untuk kill Chrome
+async function killChromeProcesses() {
+  return new Promise((resolve) => {
+    const cmd =
+      process.platform === 'win32'
+        ? 'taskkill /f /im chrome.exe /im chromedriver.exe /im chromium.exe'
+        : 'pkill -f "chrome|chromium|chromedriver"';
+    exec(cmd, (error) => {
+      if (!error) console.log('✅ Chrome processes killed');
+      resolve();
+    });
+  });
+}
 
-// // Fungsi untuk cleanup session files yang terkunci
-// async function cleanupLockedFiles() {
-//   try {
-//     const sessionPath = path.join(sessionDir, 'session-my-client');
-//     if (fs.existsSync(sessionPath)) {
-//       console.log('🧹 Cleaning up session files...');
-      
-//       // Coba rename file yang terkunci daripada delete
-//       const files = fs.readdirSync(sessionPath);
-//       for (const file of files) {
-//         if (file.includes('Cookies') || file.includes('LOCK')) {
-//           try {
-//             const oldPath = path.join(sessionPath, file);
-//             const newPath = path.join(sessionPath, file + '.old');
-//             fs.renameSync(oldPath, newPath);
-//             console.log(`✅ Renamed locked file: ${file}`);
-//           } catch (renameError) {
-//             console.warn(`⚠️  Could not rename ${file}: ${renameError.message}`);
-//           }
-//         }
-//       }
-//     }
-//   } catch (error) {
-//     console.warn('⚠️  Cleanup warning:', error.message);
-//   }
-// }
+// 🟢 Fungsi cleanup file terkunci
+async function cleanupLockedFiles() {
+  try {
+    const sessionPath = path.join(sessionDir, 'session-my-client');
+    if (fs.existsSync(sessionPath)) {
+      console.log('🧹 Cleaning up session files...');
+      const files = fs.readdirSync(sessionPath);
+      for (const file of files) {
+        if (file.includes('LOCK')) {
+          try {
+            fs.renameSync(
+              path.join(sessionPath, file),
+              path.join(sessionPath, file + '.old')
+            );
+          } catch (e) {
+            console.warn('⚠️ Could not rename:', file);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Cleanup warning:', err.message);
+  }
+}
 
-// // Enhanced Event Handling
-// client.on('qr', (qr) => {
-//   console.log('QR Code received. Please scan:');
-//   qrcode.generate(qr, { small: true });
-//   isAuthenticated = false;
-//   isClientReady = false;
-//   clientState = 'waiting_qr';
-//   loadingProgress = 0;
-//   clearTimeout(loadingTimeout);
-// });
+// 🟢 Fungsi inisialisasi WhatsApp
+async function initializeWhatsAppClient() {
+  if (clientInitialized) {
+    console.log('⚠️ Client already initialized.');
+    return;
+  }
 
-// client.on('loading_screen', (percent, message) => {
-//   console.log(`📊 Loading: ${percent}% - ${message}`);
-//   loadingProgress = percent;
-//   clientState = `loading_${percent}`;
-// });
+  console.log('🚀 Initializing WhatsApp client...');
+  clientState = 'initializing';
+  clientInitialized = true;
+  currentQR = null;
 
-// client.on('authenticated', (session) => {
-//   console.log('✅ AUTHENTICATED successfully');
-//   isAuthenticated = true;
-//   clientState = 'authenticated';
-//   reconnectAttempts = 0;
-// });
+  await killChromeProcesses();
+  await cleanupLockedFiles();
 
-// client.on('auth_failure', (msg) => {
-//   console.error('❌ AUTH FAILURE:', msg);
-//   isAuthenticated = false;
-//   isClientReady = false;
-//   clientState = 'auth_failure';
-// });
+  client = new Client({
+    puppeteer: {
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--no-first-run',
+        '--disable-background-networking',
+        '--disable-sync',
+        '--disable-extensions',
+        '--disable-default-apps',
+        '--disable-gpu',
+        '--single-process'
+      ],
+      ignoreHTTPSErrors: true,
+    },
+    authStrategy: new SafeLocalAuth({
+      dataPath: path.resolve(sessionDir),
+      clientId: 'my-client',
+    }),
+    webVersionCache: {
+      type: 'remote',
+      remotePath:
+        'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
+    },
+  });
 
-// client.on('ready', () => {
-//   console.log('✅ READY - WhatsApp client is fully ready');
-//   isClientReady = true;
-//   isAuthenticated = true;
-//   clientState = 'ready';
-//   loadingProgress = 100;
-//   reconnectAttempts = 0;
-//   clearTimeout(loadingTimeout);
-// });
-
-// client.on('disconnected', async (reason) => {
-//   console.log('❌ DISCONNECTED:', reason);
-//   isClientReady = false;
-//   isAuthenticated = false;
-//   clientState = 'disconnected';
-  
-//   // Handle logout event dengan cleanup yang aman
-//   if (reason === 'LOGOUT') {
-//     console.log('🔒 Logout detected, performing safe cleanup...');
-//     await killChromeProcesses();
-//     await cleanupLockedFiles();
-//   }
-  
-//   if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-//     reconnectAttempts++;
-//     console.log(`🔄 Attempting reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+  // Event handlers
+  client.on('qr', async (qr) => {
+    console.log('📱 QR Code generated');
+    qrcode.generate(qr, { small: true });
     
-//     setTimeout(async () => {
-//       try {
-//         await safeDestroyClient();
-//         await client.initialize();
-//       } catch (error) {
-//         console.error('Reconnection error:', error);
-//       }
-//     }, 5000);
-//   }
-// });
+    // Simpan QR code (text dan base64)
+    currentQR = {
+      text: qr,
+      image: await QRCode.toDataURL(qr)
+    };
+    
+    isAuthenticated = false;
+    isClientReady = false;
+    clientState = 'waiting_qr';
+  });
 
-// // Fungsi aman untuk destroy client
-// async function safeDestroyClient() {
-//   try {
-//     console.log('🛑 Safely destroying client...');
-//     await killChromeProcesses();
-//     await cleanupLockedFiles();
-    
-//     // Gunakan method destroy dengan timeout
-//     const destroyPromise = client.destroy();
-//     const timeoutPromise = new Promise((resolve) => {
-//       setTimeout(resolve, 10000);
-//     });
-    
-//     await Promise.race([destroyPromise, timeoutPromise]);
-//     console.log('✅ Client safely destroyed');
-//   } catch (error) {
-//     console.warn('⚠️  Safe destroy warning:', error.message);
-//   }
-// }
+  client.on('authenticated', () => {
+    console.log('✅ AUTHENTICATED');
+    isAuthenticated = true;
+    clientState = 'authenticated';
+    currentQR = null; // Clear QR setelah authenticated
+  });
 
-// // Handle browser process
-// client.on('browser_launched', (browser) => {
-//   console.log('🌐 Browser launched successfully');
-//   browser.process().then(process => {
-//     browserProcess = process;
-//     console.log('📝 Browser PID:', process.pid);
-//   });
-// });
+  client.on('ready', () => {
+    console.log('✅ READY - WhatsApp connected!');
+    isClientReady = true;
+    clientState = 'ready';
+    currentQR = null;
+  });
 
-// // Initialize client dengan enhanced error handling
-// async function initializeWhatsAppClient() {
-//   try {
-//     console.log('🚀 Initializing WhatsApp client...');
-    
-//     // Cleanup sebelum inisialisasi
-//     await killChromeProcesses();
-//     await cleanupLockedFiles();
-    
-//     await client.initialize();
-    
-//   } catch (error) {
-//     console.error('❌ Failed to initialize WhatsApp client:', error);
-    
-//     setTimeout(() => {
-//       console.log('🔄 Retrying initialization...');
-//       initializeWhatsAppClient();
-//     }, 10000);
-//   }
-// }
+  client.on('disconnected', async (reason) => {
+    console.log('❌ DISCONNECTED:', reason);
+    isAuthenticated = false;
+    isClientReady = false;
+    clientState = 'disconnected';
+    currentQR = null;
+    // ❌ Tidak auto reconnect
+  });
+
+  try {
+    await client.initialize();
+  } catch (err) {
+    console.error('Initialization error:', err);
+    clientState = 'error';
+    clientInitialized = false;
+    currentQR = null;
+  }
+}
+
+// 🟢 Fungsi destroy client manual
+async function safeDestroyClient() {
+  if (!client) {
+    console.log('ℹ️ No client to destroy');
+    return;
+  }
+  console.log('🛑 Destroying WhatsApp client...');
+  try {
+    await client.destroy();
+    await killChromeProcesses();
+    await cleanupLockedFiles();
+    client = null;
+    clientInitialized = false;
+    isAuthenticated = false;
+    isClientReady = false;
+    clientState = 'destroyed';
+    currentQR = null;
+    console.log('✅ Client destroyed');
+  } catch (err) {
+    console.error('Destroy error:', err.message);
+  }
+}
 
 // Import routes
 const userRoutes = require('./src/routes/userRoutes');
@@ -310,7 +248,6 @@ app.use('/api/mata-pelajaran', mataPelajaranRoutes);
 app.use('/api/tahun-pelajaran', tahunPelajaranRoutes);
 app.use('/api/cloudflare', cloudFlareR2StorageRoutes);
 
-// Health check endpoint
 app.get('/api', (req, res) => {
   res.status(200).json({ 
     message: 'API is running',
@@ -319,120 +256,159 @@ app.get('/api', (req, res) => {
   });
 });
 
-// // WhatsApp status endpoint
-// app.get('/api/WA/status', (req, res) => {
-//   const status = {
-//     isAuthenticated,
-//     isClientReady,
-//     clientState,
-//     loadingProgress: `${loadingProgress}%`,
-//     reconnectAttempts,
-//     timestamp: new Date().toISOString()
-//   };
-  
-//   res.json(status);
-// });
-
-// // Force cleanup endpoint
-// app.post('/api/WA/cleanup', authenticate, async (req, res) => {
-//   try {
-//     console.log('🧹 Manual cleanup triggered...');
-//     await killChromeProcesses();
-//     await cleanupLockedFiles();
-    
-//     res.json({ 
-//       success: true, 
-//       message: 'Cleanup completed',
-//       timestamp: new Date().toISOString()
-//     });
-//   } catch (error) {
-//     res.status(500).json({ 
-//       success: false, 
-//       error: error.message 
-//     });
-//   }
-// });
-
-// // WhatsApp message endpoint
-// app.post('/api/WA', authenticate, async (req, res) => {
-//   try {
-//     let { tujuan, pesan } = req.body;
-    
-//     if (!tujuan || !pesan) {
-//       return res.status(400).json({ 
-//         success: false,
-//         message: 'Parameter tujuan dan pesan diperlukan' 
-//       });
-//     }
-
-//     if (!isClientReady) {
-//       return res.status(503).json({
-//         success: false,
-//         message: 'WhatsApp client belum siap',
-//         status: { isAuthenticated, isClientReady, clientState }
-//       });
-//     }
-
-//     tujuan = tujuan.trim().replace(/^0/, '62').replace(/[+\s-]/g, '');
-//     if (!tujuan.endsWith('@c.us')) {
-//       tujuan += '@c.us';
-//     }
-    
-//     const result = await client.sendMessage(tujuan, pesan);
-    
-//     res.status(200).json({ 
-//       success: true,
-//       message: 'Pesan berhasil dikirim',
-//       data: {
-//         messageId: result.id._serialized,
-//         timestamp: result.timestamp,
-//         to: tujuan
-//       }
-//     });
-    
-//   } catch (error) {
-//     console.error('❌ Gagal mengirim pesan:', error);
-//     res.status(500).json({ 
-//       success: false,
-//       message: 'Gagal mengirim pesan',
-//       error: error.message 
-//     });
-//   }
-// });
-
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  // console.log(`📱 WhatsApp client status: ${clientState}`);
+// Cek status
+app.get('/api/WA/status', (req, res) => {
+  res.json({
+    isAuthenticated,
+    isClientReady,
+    clientState,
+    timestamp: new Date().toISOString(),
+  });
 });
 
-// // Cleanup handlers untuk graceful shutdown
-// process.on('SIGINT', async () => {
-//   console.log('🛑 Shutting down gracefully...');
-//   try {
-//     await safeDestroyClient();
-//     console.log('✅ Clean shutdown completed');
-//   } catch (error) {
-//     console.error('❌ Error during shutdown:', error);
-//   }
-//   process.exit(0);
-// });
+// Get QR Code (JSON)
+app.get('/api/WA/qr', (req, res) => {
+  if (!currentQR) {
+    return res.status(404).json({ 
+      message: 'No QR code available',
+      clientState 
+    });
+  }
+  
+  res.json({
+    qr: currentQR.text,
+    qrImage: currentQR.image,
+    clientState,
+    timestamp: new Date().toISOString()
+  });
+});
 
-// // Handle uncaught exceptions
-// process.on('uncaughtException', async (error) => {
-//   console.error('❌ Uncaught Exception:', error);
-//   await safeDestroyClient();
-//   process.exit(1);
-// });
+// Get QR Code sebagai gambar PNG langsung
+app.get('/api/WA/qr-image', async (req, res) => {
+  if (!currentQR) {
+    return res.status(404).send('No QR code available');
+  }
+  
+  try {
+    const buffer = await QRCode.toBuffer(currentQR.text, {
+      type: 'png',
+      width: 300,
+      margin: 2
+    });
+    res.type('image/png');
+    res.send(buffer);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-// process.on('unhandledRejection', async (reason, promise) => {
-//   console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
-//   await safeDestroyClient();
-//   process.exit(1);
-// });
+// Inisialisasi manual dengan polling QR
+app.post('/api/WA/init', async (req, res) => {
+  if (clientInitialized) {
+    // Jika sudah authenticated/ready, return status
+    if (isAuthenticated || isClientReady) {
+      return res.json({ 
+        message: 'Client already connected',
+        clientState,
+        isAuthenticated,
+        isClientReady
+      });
+    }
+    
+    // Jika masih waiting QR, return QR yang ada
+    if (currentQR) {
+      return res.json({
+        message: 'Client initialized, QR code ready',
+        clientState,
+        qr: currentQR.text,
+        qrImage: currentQR.image
+      });
+    }
+    
+    return res.json({ 
+      message: 'Client initializing, please wait for QR code',
+      clientState 
+    });
+  }
+  
+  // Mulai inisialisasi
+  initializeWhatsAppClient();
+  
+  // Tunggu QR code muncul (timeout 30 detik)
+  const timeout = 30000;
+  const startTime = Date.now();
+  
+  const checkQR = () => {
+    return new Promise((resolve) => {
+      const interval = setInterval(() => {
+        if (currentQR) {
+          clearInterval(interval);
+          resolve(true);
+        } else if (Date.now() - startTime > timeout) {
+          clearInterval(interval);
+          resolve(false);
+        }
+      }, 500);
+    });
+  };
+  
+  const qrReady = await checkQR();
+  
+  if (qrReady && currentQR) {
+    res.json({
+      message: 'Client initialized successfully',
+      clientState,
+      qr: currentQR.text,
+      qrImage: currentQR.image,
+      instructions: 'Scan this QR code with WhatsApp mobile app'
+    });
+  } else {
+    res.json({
+      message: 'Client initializing, QR code not ready yet',
+      clientState,
+      note: 'Please call GET /api/WA/qr to get QR code when ready'
+    });
+  }
+});
 
-// // Mulai inisialisasi
-// setTimeout(() => {
-//   initializeWhatsAppClient();
-// }, 2000);
+// Restart manual
+app.post('/api/WA/restart', async (req, res) => {
+  await safeDestroyClient();
+  await initializeWhatsAppClient();
+  res.json({ message: 'Client restarted' });
+});
+
+// Kill Chrome manual
+app.post('/api/WA/kill-chrome', async (req, res) => {
+  await killChromeProcesses();
+  res.json({ message: 'Chrome processes killed' });
+});
+
+// Send message (tidak berubah)
+app.post('/api/WA', async (req, res) => {
+  try {
+    const { tujuan, pesan } = req.body;
+    if (!isClientReady) {
+      return res.status(503).json({ message: 'Client not ready' });
+    }
+
+    let nomor = tujuan.replace(/^0/, '62').replace(/[+\s-]/g, '');
+    if (!nomor.endsWith('@c.us')) nomor += '@c.us';
+
+    const result = await client.sendMessage(nomor, pesan);
+    res.json({
+      success: true,
+      data: {
+        to: nomor,
+        messageId: result.id._serialized,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () =>
+  console.log(`🚀 Server running on port ${PORT}`)
+);

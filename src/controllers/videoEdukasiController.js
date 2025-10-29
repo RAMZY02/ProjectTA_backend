@@ -46,7 +46,7 @@ exports.getLastIdVideo = async (req, res) => {
 
 exports.createVideo = async (req, res) => {
   try {
-    const { id_user, judul, id_mapel, link_video, thumbnail, kelas, views, likes, deskripsi } = req.body;
+    const { id_user, judul, id_mapel, link_video, thumbnail, kelas, deskripsi } = req.body;
 
     const newVideo = await VideoEdukasi.create({
       id_user,
@@ -74,10 +74,6 @@ exports.updateVideo = async (req, res) => {
       { where: { id: req.params.id } }
     );
 
-    if (affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Video not found' });
-    }
-
     const updatedVideo = await VideoEdukasi.findByPk(req.params.id);
     res.json({ success: true, data: updatedVideo });
   } catch (error) {
@@ -91,10 +87,6 @@ exports.deleteVideo = async (req, res) => {
       { key_status: 'inactive' },
       { where: { id: req.params.id } }
     );
-
-    if (affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Video not found' });
-    }
 
     res.json({ success: true, message: 'Video soft deleted (key_status set to inactive)' });
   } catch (error) {
