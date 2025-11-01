@@ -100,25 +100,34 @@ async function initializeWhatsAppClient() {
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
         '--no-first-run',
-        '--disable-background-networking',
-        '--disable-sync',
-        '--disable-extensions',
-        '--disable-default-apps',
+        '--no-zygote',
         '--disable-gpu',
-        '--single-process'
+        '--disable-setuid-sandbox',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-back-forward-cache',
+        '--disable-component-extensions-with-background-pages',
+        '--disable-ipc-flooding-protection',
+        '--enable-features=NetworkService,NetworkServiceInProcess',
+        '--user-data-dir=/tmp/chrome-user-data',
+        '--remote-debugging-port=0'
       ],
+      executablePath: '/usr/bin/chromium-browser', // Path Chromium di AlmaLinux
       ignoreHTTPSErrors: true,
     },
-    authStrategy: new SafeLocalAuth({
-      dataPath: path.resolve(sessionDir),
-      clientId: 'my-client',
+    authStrategy: new LocalAuth({
+      clientId: "my-client",
+      dataPath: "./sessions"
     }),
     webVersionCache: {
       type: 'remote',
-      remotePath:
-        'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
-    },
+      remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
+    }
   });
 
   // Event handlers
@@ -387,24 +396,44 @@ app.post('/api/WA/kill-chrome', async (req, res) => {
 // Send message (tidak berubah)
 app.post('/api/WA', async (req, res) => {
   try {
-    const { tujuan, pesan } = req.body;
-    if (!isClientReady) {
-      return res.status(503).json({ message: 'Client not ready' });
+    let tujuan = req.body.tujuan;
+    let pesan = req.body.pesan;
+     // Validasi input
+    if (!tujuan || !pesan) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Parameter tujuan dan pesan diperlukan' 
+      });
     }
 
-    let nomor = tujuan.replace(/^0/, '62').replace(/[+\s-]/g, '');
-    if (!nomor.endsWith('@c.us')) nomor += '@c.us';
+    // Pastikan client sudah ready
+    if (!client.info) {
+      return res.status(503).json({
+        success: false,
+        message: 'WhatsApp client belum siap, silakan coba lagi nanti'
+      });
+    }
 
-    const result = await client.sendMessage(nomor, pesan);
-    res.json({
+    // Format nomor tujuan
+    tujuan = tujuan.replace(/^0/, '62').replace(/[+\s-]/g, '') + '@c.us';
+    // Kirim pesan dan tunggu hasilnya
+    const result = await client.sendMessage(tujuan, pesan);
+    res.status(200).json({ 
       success: true,
+      message: 'Pesan berhasil dikirim',
       data: {
-        to: nomor,
         messageId: result.id._serialized,
-      },
+        timestamp: result.timestamp
+      }
     });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } 
+  catch (error) {
+    console.error('Gagal mengirim pesan:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Gagal mengirim pesan',
+      error: error.message 
+    });
   }
 });
 
