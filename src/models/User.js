@@ -47,7 +47,7 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     nomor_ortu: {
-      type: DataTypes.STRING(12),
+      type: DataTypes.STRING(15),
       allowNull: false
     },
     kelas: {
